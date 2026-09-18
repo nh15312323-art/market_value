@@ -1,0 +1,22 @@
+{
+  "name": "market_value",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx wrangler pages dev public",
+    "deploy": "npx wrangler pages deploy public --project-name=market-value"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nh15312323-art/market_value.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/nh15312323-art/market_value/issues"
+  },
+  "homepage": "https://github.com/nh15312323-art/market_value#readme"
+}

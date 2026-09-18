@@ -1,0 +1,12 @@
+name = "market-value"
+compatibility_date = "2024-09-01"
+pages_build_output_dir = "public"
+
+# Cloudflare D1 데이터베이스 바인딩
+# 비전공자 안내: Cloudflare 대시보드 > Workers & Pages > D1에서 'market-value-db'를 생성한 뒤
+# Pages 프로젝트의 Settings > Functions > D1 Database Bindings에서
+# 변수 이름(Variable name)을 'DB'로 지정하여 바인딩합니다.
+[[d1_databases]]
+binding = "DB"
+database_name = "market-value-db"
+database_id = "local-d1-placeholder"

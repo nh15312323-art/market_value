@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VALUE LAB - AI 가치투자 분석 시스템</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- 상단 헤더 바 -->
+    <header class="top-header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">▲</span>
+          <span class="logo-text">VALUE<strong>LAB</strong></span>
+          <span class="badge badge-sub">Cloudflare Edition</span>
+        </div>
+        <div class="system-status" id="systemStatus">
+          <span class="status-dot dot-gray"></span>
+          <span class="status-text">연결 확인 중...</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="btnAdminModal" class="btn btn-outline btn-sm">
+          <span class="icon">⚙️</span> DB 용량 관리
+        </button>
+      </div>
+    </header>
+
+    <!-- 4대 핵심 탭 네비게이션 (07_PRODUCT_SPEC.md §2) -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="market">
+        <span class="tab-num">02</span>
+        <span class="tab-name">시장 스크리닝</span>
+      </button>
+      <button class="nav-tab" data-tab="financial">
+        <span class="tab-num">03</span>
+        <span class="tab-name">재무분석</span>
+      </button>
+      <button class="nav-tab" data-tab="business">
+        <span class="tab-num">04</span>
+        <span class="tab-name">비즈니스분석 (AI)</span>
+      </button>
+      <button class="nav-tab" data-tab="valuation">
+        <span class="tab-num">05</span>
+        <span class="tab-name">Valuation</span>
+      </button>
+    </nav>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="content-area">
+      <!-- 1. 시장 스크리닝 탭 -->
+      <section id="tab-market" class="tab-content active">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <h2>시장 스크리닝 <small class="text-muted">Discovery Engine</small></h2>
+            <div class="basis-date-badge">
+              <span class="label">시장 기준일:</span>
+              <strong id="marketBasisDate">계산 중...</strong>
+              <span class="rule-hint" title="영업일 21:00 이후: 당일 / 21:00 이전 및 휴일: 직전 영업일">ℹ️ 기준일 규칙(21:00)</span>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <span class="hint-tag">💡 종목을 <strong>더블클릭</strong>하면 즉시 [재무분석] 탭으로 이동합니다</span>
+            <button id="btnRefreshScreening" class="btn btn-primary btn-sm">새로고침</button>
+          </div>
+        </div>
+
+        <!-- 지표 카테고리 선택 칩 -->
+        <div class="filter-chips" id="screeningMetricChips">
+          <button class="chip active" data-metric="ZTV10">거래대금 Z10</button>
+          <button class="chip" data-metric="ZTV20">거래대금 Z20</button>
+          <button class="chip" data-metric="MOMENTUM_WEIGHTED">가중 모멘텀</button>
+          <button class="chip" data-metric="RETURN_20D">20일 수익률</button>
+          <button class="chip" data-metric="RETURN_60D">60일 수익률</button>
+          <button class="chip" data-metric="RETURN_120D">120일 수익률</button>
+          <button class="chip" data-metric="RS20">KOSPI 상대강도 RS20</button>
+          <button class="chip" data-metric="RS60">KOSPI 상대강도 RS60</button>
+          <button class="chip" data-metric="HIGH_52W">52주 최고가 근접</button>
+        </div>
+
+        <!-- Top 20 테이블 카드 -->
+        <div class="card table-card">
+          <div class="card-header">
+            <h3 id="currentMetricTitle">거래대금 Z-Score 10일 Top 20</h3>
+            <span class="text-muted text-sm">조건: 시가총액 ≥ 500억 / 거래대금 ≥ 15억</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="screeningTable">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">순위</th>
+                  <th>종목코드</th>
+                  <th>종목명</th>
+                  <th>시장</th>
+                  <th class="text-right">현재가</th>
+                  <th class="text-right">거래대금(억)</th>
+                  <th class="text-right" id="thMetricValue">지표값</th>
+                  <th class="text-center" style="width: 120px;">바로가기</th>
+                </tr>
+              </thead>
+              <tbody id="screeningTableBody">
+                <tr><td colspan="8" class="text-center py-4">스크리닝 데이터를 불러오는 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 재무분석 탭 -->
+      <section id="tab-financial" class="tab-content">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <h2>장기 재무분석 <small class="text-muted">10-Year Financial Dashboard</small></h2>
+          </div>
+          <div class="search-box">
+            <input type="text" id="financialSearchInput" placeholder="종목명 또는 종목코드 입력 (예: 삼성전자, 005930)">
+            <button id="btnFinancialSearch" class="btn btn-primary">조회</button>
+          </div>
+        </div>
+
+        <!-- 빠른 선택 칩 -->
+        <div class="quick-stocks" id="financialQuickChips">
+          <span class="label">추천 종목:</span>
+          <button class="stock-chip" data-code="005930" data-name="삼성전자">삼성전자</button>
+          <button class="stock-chip" data-code="000660" data-name="SK하이닉스">SK하이닉스</button>
+          <button class="stock-chip" data-code="005380" data-name="현대차">현대차</button>
+          <button class="stock-chip" data-code="035420" data-name="NAVER">NAVER</button>
+          <button class="stock-chip" data-code="105560" data-name="KB금융">KB금융</button>
+          <button class="stock-chip" data-code="010130" data-name="고려아연">고려아연</button>
+        </div>
+
+        <!-- 기업 요약 헤더 & 더블클릭 액션 안내 (07 §3.2) -->
+        <div class="company-header-card" id="companyHeaderCard">
+          <div class="company-meta">
+            <h1 class="clickable-company" id="targetCompanyName" title="더블클릭 시 비즈니스분석 또는 Valuation 이동">
+              삼성전자 <small id="targetStockCode">005930</small>
+            </h1>
+            <span class="market-pill" id="targetMarket">KOSPI</span>
+            <span class="source-tag" id="financialDataSource">DART 원천 + 정규화 지표</span>
+          </div>
+          <div class="action-buttons">
+            <span class="hint-text">💡 회사명 더블클릭 또는 우측 버튼 클릭:</span>
+            <button id="btnGoToBusiness" class="btn btn-indigo btn-sm">
+              ✨ 비즈니스분석 (Gemini)
+            </button>
+            <button id="btnGoToValuation" class="btn btn-emerald btn-sm">
+              📊 Valuation (기대수익률)
+            </button>
+          </div>
+        </div>
+
+        <!-- 차트 영역 -->
+        <div class="charts-grid">
+          <div class="card chart-card">
+            <h4>매출액 / 영업이익 / 당기순이익 추이 (단위: 억원)</h4>
+            <div class="chart-wrapper">
+              <canvas id="chartRevenueProfit"></canvas>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <h4>ROE 및 영업이익률 추이 (%)</h4>
+            <div class="chart-wrapper">
+              <canvas id="chartMarginRoe"></canvas>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <h4>영업활동현금흐름(CFO) vs 잉여현금흐름(FCF) (단위: 억원)</h4>
+            <div class="chart-wrapper">
+              <canvas id="chartCashFlow"></canvas>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <h4>BPS (주당순자산가치) 성장 추이 (원)</h4>
+            <div class="chart-wrapper">
+              <canvas id="chartBps"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10개년 연간 재무제표 그리드 -->
+        <div class="card table-card mt-4">
+          <div class="card-header">
+            <h3>최근 10개년 연간 표준 재무제표</h3>
+            <span class="text-muted text-sm">금액 단위: 억원, 비율: %, 주당: 원</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table table-financial" id="tableFinancialAnnual">
+              <thead>
+                <tr>
+                  <th>항목 / 연도</th>
+                  <!-- 동적 연도 컬럼 삽입 -->
+                </tr>
+              </thead>
+              <tbody id="tableFinancialAnnualBody">
+                <tr><td class="text-center py-4">조회할 종목을 선택해주세요.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 최근 분기 재무제표 그리드 -->
+        <div class="card table-card mt-4">
+          <div class="card-header">
+            <h3>최근 분기별 재무 실적 (단독 분기 기준)</h3>
+            <span class="text-muted text-sm">금액 단위: 억원, 비율: %, 주당: 원</span>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table table-financial" id="tableFinancialQuarterly">
+              <thead>
+                <tr>
+                  <th>항목 / 분기</th>
+                </tr>
+              </thead>
+              <tbody id="tableFinancialQuarterlyBody">
+                <tr><td class="text-center py-4">데이터 로딩 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 비즈니스분석 탭 (Gemini 실시간 호출, DB 미저장) -->
+      <section id="tab-business" class="tab-content">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <h2>비즈니스 & 해자 분석 <small class="text-muted">Gemini 2.5 AI Powered</small></h2>
+            <div class="policy-note">
+              🔒 V1 정책: AI 분석 결과는 D1 용량 절약을 위해 저장하지 않고 실시간 브라우저 세션으로 제공됩니다.
+            </div>
+          </div>
+          <div class="search-box">
+            <input type="text" id="businessSearchInput" placeholder="분석할 기업명 입력">
+            <button id="btnRunBusinessAnalysis" class="btn btn-indigo">AI 심층 분석 실행</button>
+          </div>
+        </div>
+
+        <!-- 현재 분석 대상 표시 -->
+        <div class="analysis-target-banner" id="businessTargetBanner">
+          <div>
+            <span class="text-muted">분석 대상:</span>
+            <strong id="businessTargetName">삼성전자 (005930)</strong>
+          </div>
+          <button id="btnReanalyzeGemini" class="btn btn-outline btn-sm">다시 분석</button>
+        </div>
+
+        <!-- 로딩 인디케이터 -->
+        <div class="ai-loading-container" id="businessLoading" style="display: none;">
+          <div class="spinner"></div>
+          <h3>Gemini AI가 기업의 비즈니스 모델과 경제적 해자를 정밀 분석 중입니다...</h3>
+          <p class="text-muted">DART 재무 컨텍스트 주입 → 경쟁우위 검증 → 산업구조 평가 (약 5~15초 소요)</p>
+        </div>
+
+        <!-- AI 분석 결과 카드 그리드 -->
+        <div class="business-results" id="businessResults">
+          <!-- 1. 사업 모델 카드 -->
+          <div class="card business-card">
+            <div class="card-badge bg-blue">01 사업 모델 (Business Model)</div>
+            <h3 id="bmSummary">회사의 수익 창출 방식</h3>
+            <div class="grid-2col mt-3">
+              <div>
+                <h5>주요 고객 (Customers)</h5>
+                <ul id="bmCustomers" class="tag-list"></ul>
+              </div>
+              <div>
+                <h5>주력 제품/서비스 (Products)</h5>
+                <ul id="bmProducts" class="tag-list"></ul>
+              </div>
+            </div>
+            <div class="grid-2col mt-3">
+              <div>
+                <h5>수익 구조 (Revenue Model)</h5>
+                <ul id="bmRevenueModel" class="bullet-list"></ul>
+              </div>
+              <div>
+                <h5>가격결정력 & 핵심 Driver</h5>
+                <p><strong>가격결정력:</strong> <span id="bmPricingModel">-</span></p>
+                <h5>핵심 변수 (Key Drivers)</h5>
+                <ul id="bmKeyDrivers" class="tag-list"></ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. 경제적 해자 및 경쟁우위 카드 -->
+          <div class="card business-card">
+            <div class="card-badge bg-emerald">02 경제적 해자 (Economic Moat)</div>
+            <div id="moatContainer" class="moat-grid">
+              <!-- Moat 아이템 동적 삽입 -->
+            </div>
+          </div>
+
+          <!-- 3. 산업 구조 (Porter's 5 Forces) 카드 -->
+          <div class="card business-card">
+            <div class="card-badge bg-purple">03 산업 구조 & 시장 환경 (Industry)</div>
+            <div class="industry-header">
+              <h4 id="indDefinition">산업 정의</h4>
+              <div class="industry-tags">
+                <span class="pill pill-blue" id="indStage">성장 단계: -</span>
+                <span class="pill pill-gray" id="indGrowth">성장률: -</span>
+              </div>
+            </div>
+            <div class="forces-grid mt-3">
+              <div class="force-box">
+                <span class="force-title">공급자 교섭력</span>
+                <p id="indSupplier">-</p>
+              </div>
+              <div class="force-box">
+                <span class="force-title">구매자 교섭력</span>
+                <p id="indBuyer">-</p>
+              </div>
+              <div class="force-box">
+                <span class="force-title">신규 진입장벽</span>
+                <p id="indBarrier">-</p>
+              </div>
+              <div class="force-box">
+                <span class="force-title">기존 경쟁 강도</span>
+                <p id="indRivalry">-</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. 경쟁사 & 핵심 리스크 -->
+          <div class="grid-2col">
+            <div class="card business-card">
+              <div class="card-badge bg-amber">04 주요 경쟁사 (Competitors)</div>
+              <ul id="competitorList" class="competitor-list mt-3"></ul>
+            </div>
+            <div class="card business-card">
+              <div class="card-badge bg-red">05 사업 리스크 (Risks)</div>
+              <ul id="riskList" class="risk-list mt-3"></ul>
+            </div>
+          </div>
+
+          <!-- 5. Business Thesis (투자 논거) -->
+          <div class="card business-card thesis-card">
+            <div class="card-badge bg-indigo">06 핵심 투자 논거 (Business Thesis)</div>
+            <blockquote id="thesisContent" class="thesis-quote">
+              분석 대기 중...
+            </blockquote>
+            <div class="mt-3">
+              <h5>투자 전 추가 모니터링 질문 (Check Required)</h5>
+              <ul id="checkRequiredList" class="check-list"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Valuation 탭 (05_VALUATION.md BPS × ROE 모형) -->
+      <section id="tab-valuation" class="tab-content">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <h2>Valuation <small class="text-muted">BPS × ROE 기대수익률 모형</small></h2>
+            <span class="basis-info" id="valuationBasisInfo">기준일: -</span>
+          </div>
+          <div class="search-box">
+            <input type="text" id="valuationSearchInput" placeholder="종목명 또는 코드 입력">
+            <button id="btnValuationSearch" class="btn btn-primary">Valuation 계산</button>
+          </div>
+        </div>
+
+        <!-- 종목 헤더 -->
+        <div class="company-header-card">
+          <div class="company-meta">
+            <h1 id="valCompanyName">삼성전자 <small id="valStockCode">005930</small></h1>
+            <span class="source-tag">05_VALUATION.md §2 공식 적용</span>
+          </div>
+          <div class="price-input-box">
+            <label for="valOverridePrice">현재 주가(원):</label>
+            <input type="number" id="valOverridePrice" class="input-number" placeholder="현재가">
+            <button id="btnRecalcValuation" class="btn btn-secondary btn-sm">재계산</button>
+          </div>
+        </div>
+
+        <!-- 핵심 Valuation 카드 그리드 -->
+        <div class="valuation-cards-grid">
+          <div class="val-metric-card">
+            <span class="val-label">최근 분기 BPS (BPS₀)</span>
+            <div class="val-value" id="valBps0">- 원</div>
+            <span class="val-sub" id="valBpsPeriod">기준기간: -</span>
+          </div>
+          <div class="val-metric-card">
+            <span class="val-label">10개년 연간 ROE 평균 (ROE_avg)</span>
+            <div class="val-value text-blue" id="valRoeAvg">- %</div>
+            <span class="val-sub" id="valRoeYears">적용 기간: 10개년</span>
+          </div>
+          <div class="val-metric-card highlight-blue">
+            <span class="val-label">미래 예상 BPS (N년 후)</span>
+            <div class="val-value" id="valFutureBps">- 원</div>
+            <span class="val-sub">공식: BPS₀ × (1 + ROE_avg)^N</span>
+          </div>
+          <div class="val-metric-card highlight-emerald">
+            <span class="val-label">예상 상승 배수 (Upside)</span>
+            <div class="val-value" id="valUpside">- 배</div>
+            <span class="val-sub">공식: Future BPS / 현재가</span>
+          </div>
+          <div class="val-metric-card highlight-indigo mega-card">
+            <span class="val-label">연환산 기대수익률 (Expected Return)</span>
+            <div class="val-value big-text" id="valExpectedReturn">- %</div>
+            <span class="val-sub">공식: (Upside Multiple^(1/N)) - 1</span>
+          </div>
+        </div>
+
+        <!-- ROE 민감도 분석 시뮬레이터 -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h3>ROE 변동에 따른 기대수익률 시뮬레이션</h3>
+            <span class="text-muted text-sm">ROE가 상승하거나 하락할 때의 기대수익률 변화를 확인해보세요</span>
+          </div>
+          <div class="simulator-body">
+            <div class="slider-row">
+              <label for="roeSlider">가정 ROE (%): <strong id="sliderRoeVal">12.0%</strong></label>
+              <input type="range" id="roeSlider" min="1" max="40" step="0.5" value="12" class="range-slider">
+            </div>
+            <div class="sim-result-box">
+              <div class="sim-item">
+                <span>시뮬레이션 미래 BPS:</span>
+                <strong id="simFutureBps">- 원</strong>
+              </div>
+              <div class="sim-item">
+                <span>시뮬레이션 상승배수:</span>
+                <strong id="simUpside">- 배</strong>
+              </div>
+              <div class="sim-item">
+                <span>시뮬레이션 연환산 기대수익률:</span>
+                <strong id="simExpectedReturn" class="text-emerald">- %</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 팝오버 메뉴: 재무분석 회사명 더블클릭 시 (07 §3.2) -->
+    <div id="companyActionPopover" class="popover-menu" style="display: none;">
+      <div class="popover-header">
+        <strong id="popoverStockName">삼성전자</strong>
+        <button id="btnClosePopover" class="btn-close">&times;</button>
+      </div>
+      <div class="popover-buttons">
+        <button id="popoverGoBusiness" class="btn btn-indigo btn-block">
+          ✨ 비즈니스분석 (Gemini)으로 이동
+        </button>
+        <button id="popoverGoValuation" class="btn btn-emerald btn-block mt-2">
+          📊 Valuation (기대수익률)으로 이동
+        </button>
+      </div>
+    </div>
+
+    <!-- D1 DB 용량 관리 모달 (07_PRODUCT_SPEC.md §5) -->
+    <div id="adminModal" class="modal-backdrop" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>Cloudflare D1 DB 용량 관리</h3>
+          <button id="btnCloseAdminModal" class="btn-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            Cloudflare D1 무료 한도 절약을 위해 화면에서 데이터를 영역별로 삭제할 수 있습니다.
+          </div>
+
+          <div class="db-stat-table">
+            <div class="stat-row">
+              <span>시장 스크리닝 결과 (screening_results):</span>
+              <strong id="statScreeningCount">0건</strong>
+            </div>
+            <div class="stat-row">
+              <span>재무분석 연간 데이터 (financial_annual):</span>
+              <strong id="statAnnualCount">0건</strong>
+            </div>
+            <div class="stat-row">
+              <span>재무분석 분기 데이터 (financial_quarterly):</span>
+              <strong id="statQuarterlyCount">0건</strong>
+            </div>
+            <div class="stat-row">
+              <span>Valuation 계산 결과 (valuation):</span>
+              <strong id="statValuationCount">0건</strong>
+            </div>
+          </div>
+
+          <h4 class="mt-4 mb-2">데이터 영역별 삭제</h4>
+          <div class="delete-buttons-grid">
+            <button id="btnDeleteScreening" class="btn btn-outline-danger">
+              시장 스크리닝 데이터 삭제
+            </button>
+            <button id="btnDeleteFinancial" class="btn btn-outline-danger">
+              현재 종목 재무 데이터 삭제
+            </button>
+            <button id="btnDeleteFinancialAll" class="btn btn-outline-danger">
+              전체 재무 데이터 삭제
+            </button>
+            <button id="btnDeleteValuation" class="btn btn-outline-danger">
+              Valuation 결과 삭제
+            </button>
+          </div>
+
+          <hr class="my-4">
+
+          <button id="btnDeleteAll" class="btn btn-danger btn-block">
+            ⚠️ 전체 데이터베이스 초기화 (All Clean)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript 모듈 로드 -->
+  <script src="js/admin.js"></script>
+  <script src="js/market.js"></script>
+  <script src="js/financial.js"></script>
+  <script src="js/business.js"></script>
+  <script src="js/valuation.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
