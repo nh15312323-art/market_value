@@ -1,6 +1,4 @@
-# 06_TECHNICAL_SPEC.md
-
-> 실제 내용상 번호는 08(TECHNICAL_SPEC)에 해당한다. `07_PRODUCT_SPEC.md`(신규)가 화면/탭 구성과 UX 흐름을 정의하므로, 리포지토리 반영 시 이 파일명을 `08_TECHNICAL_SPEC.md`로 변경하는 것을 권장한다 (`07_PRODUCT_SPEC.md` §8 참고).
+# 08_TECHNICAL_SPEC.md
 
 ## 1. 목적
 
@@ -929,7 +927,6 @@ AI-Investment/
 │   ├── 03_FINANCIAL_ANALYSIS.md
 │   ├── 04_BUSINESS_MOAT_INDUSTRY.md
 │   ├── 05_VALUATION.md
-│   ├── 06_PORTFOLIO_KELLY.md
 │   ├── 07_PRODUCT_SPEC.md
 │   └── 08_TECHNICAL_SPEC.md
 │
