@@ -1,6 +1,9 @@
+
 name = "market-value"
-compatibility_date = "2024-09-01"
-pages_build_output_dir = "public"
+compatibility_date = "2026-09-18"
+
+[assets]
+directory = "./public"
 
 # Cloudflare D1 데이터베이스 바인딩
 # 비전공자 안내: Cloudflare 대시보드 > Workers & Pages > D1에서 'market-value-db'를 생성한 뒤
